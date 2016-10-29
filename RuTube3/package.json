@@ -1,0 +1,17 @@
+{
+  "name": "rutube",
+  "version": "1.0.0",
+  "description": "Appliation for video sharing",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "asgeirf14, sigmar14, quang14",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.14.0",
+    "mongodb": "^2.2.11",
+    "mongoose": "^4.6.5",
+    "node-uuid": "^1.4.7"
+  }
+}
