@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const favoriteVideoSchema = new mongoose.Schema({
+const FavoriteVideoSchema = new mongoose.Schema({
     user_id: {
         type: String,
         required: true
@@ -11,5 +11,5 @@ const favoriteVideoSchema = new mongoose.Schema({
     }
 });
 
-const favoriteVideoEntity = mongoose.model("favoriteVideo", favoriteVideoSchema);
-module.exports = favoriteVideoEntity;
+const FavoriteVideoEntity = mongoose.model("FavoriteVideo", FavoriteVideoSchema);
+module.exports = FavoriteVideoEntity;

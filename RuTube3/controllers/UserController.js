@@ -4,32 +4,19 @@ const app = express();
 const entities = require("../models/entities");
 const uuid = require("node-uuid");
 const bodyParser = require('body-parser');
+const services = require("../models/services");
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extend: true
 }));
-const adminToken = "Swagger";
-
-/* ---------------------------- Dót fyrir Account Service ----------------------------*/
 
 // Get all users
 app.get("/users", (req, res) => {
-    entities.user.find(function(err, docs) {
-        if (err) {
-            res.status(500).send("Something went wrong: " + err);
-            return;
-        } else {
-            var sendMsg = [];
-            for (var i in docs) {
-                sendMsg.push({
-                    _id: docs[i]._id,
-                    name: docs[i].name,
-                    username: docs[i].username
-                });
-            }
-            res.status(200).send(sendMsg);
-        }
-    });
+    services.AccountService.getUsers().then(function(data) {
+        res.status(200).send(data);
+    }).catch(function(reason) {
+        res.status(500).send(reason);
+    });    
 });
 
 // Post new user
@@ -40,73 +27,150 @@ app.post("/users", (req, res) => {
         password: req.body.password,
         email: req.body.email
     };
-    var entity = new entities.user(data);
-    entity.save(function(err, doc) {
-        if (err) {
-            res.status(412).send("Something went wrong: " + err);
-            return;
-        } else {
-            res.status(201).send({
-                _id: entity._id,
-                name: data.usernme
-            });
-        }
-    });
+    services.AccountService.addUser(data).then(function(data) {
+        res.status(201).send(data);
+    }).catch(function(reason) {
+        res.status(412).send(reason);
+    }); 
 });
 
 // Get user by id
-app.get("/users/:id", (req, res) => {
+app.get("/users/:username", (req, res) => {
     var query = {
-        _id: req.params.id
+        username: req.params.username
     };
-    entities.user.find(query, function(err, docs) {
-        if(err) {
-            res.status(404).send("Something went wrong: " + err);
-            return;
-        } else {
-            res.status(200).send(docs);
-        }
-    });
+    services.AccountService.getUser(query).then(function(data) {
+        res.status(200).send(data);
+    }).catch(function(reason) {
+        res.status(404).send(reason);
+    }); 
 });
 
 // Update user password
-app.put("/users/:id", (req, res) => {
+app.put("/my/profile/password", (req, res) => {
     var newPassword = req.body.password;
     var query = {
-        _id: req.params.id
+        _id: req.headers.authorization
     };
-    entities.user.find(query, function(err, docs) {
-        if(err) {
-            res.status(404).send("Something went wrong: " + err);
-            return;
-        } else {
-            docs[0].password = newPassword;
-            docs[0].save(function(err) {
-                if(err) {
-                    res.status(412).send("Something went wrong "+ err);
-                } else {
-                    res.send(docs[0].name + "'s password has been changed");
-                }
-            });
-        }
-    });
+    services.AccountService.updatePassword(query, newPassword).then(function() {
+        res.status(203).send('Password updated');
+    }).catch(function(reason) {
+        res.status(412).send(reason);
+    }); 
 });
 
 // Delete user by id
-app.delete("/users/:id", (req, res) => {
-    entities.user.remove({
-        _id: req.params.id
-    }, function(err, docs) {
-        if(err) {
-            res.status(404).send("Something went wrong " + err);
-            return;
-        } else {
-            res.send("User with id " + req.params.id + " has been removed");
-        }
+app.delete("/users/:username", (req, res) => {
+    var query = {
+        username: req.params.username
+    };
+    services.AccountService.removeUser(query).then(function() {
+        res.status(200).send('User removed');
+    }).catch(function(reason) {
+        res.status(404).send(reason);
+    }); 
+});
+
+// Add a favorite video to service
+app.post("/my/profile/favorites", (req, res) => {
+    var auth = req.headers.authorization;
+    var videoId = req.body.video_id;
+    var query = {
+        video_id: videoId
+    };
+    services.UserService.addFavoriteVideo(auth, query).then(function() {
+        res.status(200).send();
+    }).catch(function(reason) {
+        res.status(500).send(reason);
+    }); 
+});
+
+app.get("/my/profile/favorites", (req, res) => {
+    var auth = req.headers.authorization;
+    var query = {
+        user_id: auth
+    }
+    services.UserService.getFavoriteVideosByUserId(query).then(function(data) {
+        res.status(200).send(data);
+    }).catch(function(reason) {
+        res.status(500).send(reason);
     });
 });
 
-/* ---------------------------- Dót fyrir User Service ----------------------------*/
+app.get("/users/:username/favorites", (req, res) => {
+    var user = req.params.username;
+    var query = {
+        username: user
+    };
+    services.UserService.getFavoriteVideosByUsername(query).then(function(data) {
+        res.status(200).send(data);
+    }).catch(function(reason) {
+        res.status(500).send(reason);
+    });
+});
 
+app.delete("/my/profile/favorites", (req, res) => {
+    var auth = req.headers.authorization;
+    var videoId = req.body.video_id;
+    var query = {
+        user_id: auth,
+        video_id: videoId
+    };
+    services.UserService.deleteFavoriteVideo(query).then(function(data) {
+        res.status(200).send(data);
+    }).catch(function(reason) {
+        res.status(500).send(reason);
+    });
+});
+
+app.post("/my/profile/friends", (req, res) => {
+    var auth = req.headers.authorization;
+    var username = req.body.username;
+    var query = {
+        username: username
+    };
+    services.UserService.addFriend(query, auth).then(function() {
+        res.status(200).send('Friend added');
+    }).catch(function(reason) {
+        res.status(500).send(reason);
+    });
+});
+
+app.get("/my/profile/friends", (req, res) => {
+    var auth = req.headers.authorization;
+    var query = {
+        user_id: auth
+    }
+    services.UserService.getFriendsById(query).then(function(data) {
+        res.status(200).send(data);
+    }).catch(function(reason) {
+        res.status(500).send(reason);
+    });
+});
+
+app.get("/users/:username/friends", (req, res) => {
+    var user = req.params.username;
+    var query = {
+        username: user
+    };
+    services.UserService.getFriendsByUsername(query).then(function(data) {
+        res.status(200).send(data);
+    }).catch(function(reason) {
+        res.status(500).send(reason);
+    });
+});
+
+app.delete("/my/profile/friends", (req, res) => {
+    var auth = req.headers.authorization;
+    var username = req.body.username;
+    var query = {
+        username: username
+    };
+     services.UserService.deleteFriends(query, auth).then(function(data) {
+        res.status(200).send('Friend removed');
+    }).catch(function(reason) {
+        res.status(500).send(reason);
+    });
+});
 
 module.exports = app;
