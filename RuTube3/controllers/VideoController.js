@@ -10,16 +10,25 @@ app.use(bodyParser.urlencoded({
     extend: true
 }));
 
-// Get all videos
+/**
+ * Get all videos
+ * Returns 200 if ok
+ * Returns 500 if not ok
+ */
 app.get("/videos", (req, res) => {
 	services.VideoService.getVideos().then(function(data) {
         res.status(200).send(data);
     }).catch(function(reason) {
-        res.status(500).send(reason);
+        res.status(500).send('Failed to get all videos');
     }); 
 });
 
-// Get all videos in a given channel
+/**
+ * Get all videos from chanel
+ * params must contain {username}
+ * Returns 200 if ok
+ * Returns 404 if not ok
+ */
 app.get("/videos/:username", (req, res) => {
 	var query = {
 		owner: req.params.username
@@ -27,11 +36,16 @@ app.get("/videos/:username", (req, res) => {
 	services.VideoService.getVideosFromChannel(query).then(function(data) {
         res.status(200).send(data);
     }).catch(function(reason) {
-        res.status(404).send(reason);
+        res.status(404).send('Failed to get all videos in a given channel');
     }); 
 });
 
-// Post new video to a channel
+/**
+ * Post a video
+ * Body must contain owner and title of the video
+ * Returns 201 if ok
+ * Returns 412 if not ok
+ */
 app.post("/videos", (req, res) => {
 	var query = {
 		username: req.body.owner
@@ -41,13 +55,18 @@ app.post("/videos", (req, res) => {
 		owner: req.body.owner
 	};
 	services.VideoService.addVideo(query, data).then(function(data) {
-        res.status(200).send(data);
+        res.status(201).send(data);
     }).catch(function(reason) {
-        res.status(404).send(reason);
+        res.status(412).send('Failed to add new video to channel');
     });
 });
 
-// Delete video by id
+/**
+ * Remove a video
+ * params must contain {_id} of video
+ * Returns 200 if ok
+ * Returns 404 if not ok
+ */
 app.delete("/videos/:id", (req, res) => {
 	var query = {
 		_id: req.params.id
@@ -55,7 +74,7 @@ app.delete("/videos/:id", (req, res) => {
 	services.VideoService.removeVideo(query).then(function(data) {
         res.status(200).send(data);
     }).catch(function(reason) {
-        res.status(404).send(reason);
+        res.status(404).send('Failed to delete video by id');
     });
 });
 

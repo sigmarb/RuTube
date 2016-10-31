@@ -30,7 +30,8 @@ app.getUsers = function () {
                     sendMsg.push({
                         _id: docs[i]._id,
                         name: docs[i].name,
-                        username: docs[i].username
+                        username: docs[i].username,
+                        email: docs[i].email
                     });
                 }
                 resolve(sendMsg);
@@ -45,7 +46,12 @@ app.getUser = function (query) {
             if(err || docs.length === 0) {
                 reject(err);
             } else {
-                resolve(docs);
+                var sendMsg = {
+                    username: docs[0].username,
+                    email: docs[0].email,
+                    name: docs[0].name
+                }
+                resolve(sendMsg);
             }
         });
     });
@@ -70,6 +76,25 @@ app.updatePassword = function(query, newPassword) {
     });
 };
 
+app.updateUsername = function(query, newUsername) {
+    return new Promise(function (resolve, reject) {
+        entities.User.find(query, function(err, docs) {
+            if(err) {
+                reject(err);
+            } else {
+                docs[0].username = newUsername;
+                docs[0].save(function(err) {
+                    if(err) {
+                        reject(err);
+                    } else {
+                        resolve();
+                    }
+                });
+            }
+        });
+    });
+};
+
 app.removeUser = function(query) {
     return new Promise(function (resolve, reject) {
         entities.User.remove(query, function(err, docs) {
@@ -78,6 +103,18 @@ app.removeUser = function(query) {
                 return;
             } else {
                 resolve();
+            }
+        });
+    });
+};
+
+app.authenticate = function(query) {
+    return new Promise(function (resolve, reject) {
+        entities.User.find(query, function(err, docs) {
+            if (err || docs.length === 0) {
+                reject(err);
+            } else {
+                resolve({_id: docs[0]._id});
             }
         });
     });
